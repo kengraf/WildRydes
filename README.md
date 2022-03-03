@@ -133,7 +133,8 @@ PARENTID=`aws apigateway get-resources --rest-api-id $APIID \
 aws apigateway put-method --rest-api-id $APIID \
     --resource-id $PARENTID --http-method GET \
     --authorization-type "NONE"
-            
+
+
 # Create integration with Lambda
 ARN=`aws lambda get-function --function-name EenyMeenyMinyMoe \
     --query Configuration.FunctionArn --output text`
