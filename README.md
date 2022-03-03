@@ -39,89 +39,83 @@ DELETE
 aws codecommit delete-repository --repository-name "WildRydes"
 ```
 
-### Amplify
+### Amplify Console
 ```
-ID=`aws amplify create-app --name "WildRydes" --repository $URL --platform WEB --iam-service-role-arn  --enable-branch-auto-build --output text --query "app.appId" `
-aws amplify create-branch --app-id $ID --branch-name master
-aws amplify create-deployment --app-id $ID --branch-name master
-arn:aws:iam::788715698479:role/service-role/AWSAmplifyCodeCommitExecutionRole-d2w52rz60jdyl8
+Get started with Web Hosting
+Enter name "WildRydes", Click next
+Select AWS CodeCommit, Click Next
+Select your repo, Click next
+Check auto deploy, Click next
+Click "Save and Deploy"
+
+Validate app deployed
 ```
 DELETE
 ```
+ID=`aws amplify list-apps --output text --query "apps[?name=='WildRydes'].appId" `
 aws amplify delete-app --app-id $ID
 ```
-“new web app”, select CodeCommit repo, accept default build configuration.
-Cognito
+
+### Cognito
 Manage User Pool | Create User Pool
 Name pool ‘WildRydes’
 Review defaults and click Create
 ```
-POOLID=`aws cognito-idp   create-user-pool --pool-name WildRydes2 --output text --query “UserPool.Id” `
-POOLID=`aws cognito-idp list-user-pools --max-results 10 --output text --query “UserPools[?Name==’WildRydes2’].Id`
-aws cognito-idp delete-user-pool –user-pool-id $POOLID
-```
-Cognito add app client
-CLIENTID=`aws cognito-idp create-user-pool-client --user-pool-id $POOLID --no-allowed-o-auth-flows-user-pool-client --client-name WildRydesApp --output text --query “UserPoolClient.ClientId” `
+POOLID=`aws cognito-idp create-user-pool --pool-name "WildRydesCLI" --auto-verified-attributes email --output text --query "UserPool.Id" `
+CLIENTID=`aws cognito-idp create-user-pool-client --user-pool-id $POOLID --no-allowed-o-auth-flows-user-pool-client --client-name "WildRydesCLI" --output text --query "UserPoolClient.ClientId" `
 sed -i "/userPoolId:/ s/'.*'/'$POOLID'/" js/config.js
 sed -i "/userPoolClientId:/ s/'.*'/'$CLIENTID'/" js/config.js
-
------------------------------------------ cut here --------------------
-
-### DynamoDB: used to store your friends
+sed -i "/region:/ s/'.*'/'us-east-2'/" js/config.js
+git add .
+git commit -m 'user pool update'
+git push
 ```
-# Create a new table named `EenyMeenyMinyMoe`
+
+Validate Cognito is active, in browser click "Giddy up" registration button.
+
+delete
+```
+POOLID=`aws cognito-idp list-user-pools --max-results 10 --output text --query "UserPools[?Name=='WildRydes'].Id" `
+aws cognito-idp delete-user-pool --user-pool-id $POOLID
+```
+
+### DynamoDB
+```
+# Create a new table named `WildRydes`
 aws dynamodb create-table \
-    --table-name EenyMeenyMinyMoe \
-    --attribute-definitions AttributeName=Name,AttributeType=S  \
-    --key-schema AttributeName=Name,KeyType=HASH  \
+    --table-name Rides \
+    --attribute-definitions AttributeName=RideId,AttributeType=S  \
+    --key-schema AttributeName=RideId,KeyType=HASH  \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
     
 ```
-    
-```
-# Add friend records for testing.  
-friends=("Alice" "Bob" "Charlie")
-for i in "${friends[@]}"
-do
-   : 
-  aws dynamodb put-item --table-name EenyMeenyMinyMoe --item \
-    '{ "Name": {"S": "'$i'"} }' 
-done
 
-```
-
-### Lambda: used to select a friend
-AWS CLI to create a Lambda function require files for packages, roles, and policies.  The example here assumes you have cloned this Github repo and are in the proper working directory
-
+### Lambda: used to select a ride
 ```
 # Create role for Lambda function
-aws iam create-role --role-name EenyMeenyMinyMoe \
+aws iam create-role --role-name "WildRydes" \
     --assume-role-policy-document file://lambdatrustpolicy.json
-```
-```
 # Attach policy for DynamoDB access to role
-aws iam put-role-policy --role-name EenyMeenyMinyMoe \
-    --policy-name EenyMeenyMinyMoe \
+aws iam put-role-policy --role-name "WildRydes" \
+    --policy-name "WildRydes" \
     --policy-document file://lambdapolicy.json
 ARN=`aws iam list-roles --output text \
-    --query "Roles[?RoleName=='EenyMeenyMinyMoe'].Arn" `
-```
-```
+    --query "Roles[?RoleName=='WildRydes'].Arn" `
 # Create Lambda
 zip function.zip -xi index.js
-aws lambda create-function --function-name EenyMeenyMinyMoe \
+aws lambda create-function --function-name "WildRydes" \
     --runtime nodejs14.x --role $ARN \
     --zip-file fileb://function.zip \
     --runtime nodejs14.x --handler index.handler
-```
-```
 # Give the API Gateway permission to invoke the Lambda
 aws lambda add-permission \
-    --function-name EenyMeenyMinyMoe \
+    --function-name "WildRydes" \
     --action lambda:InvokeFunction \
     --statement-id AllowGateway \
     --principal apigateway.amazonaws.com
 ```
+
+----------------------------------------- cut here --------------------
 
 ### API Gateway
 ```
