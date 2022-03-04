@@ -7,8 +7,9 @@ This deployment leverages a database tier (AWS DynamoDB), application (Lambda), 
 
 ### General environment variables
 ```
+# Note: Environment variables are lost when Cloudshell times out.
 NAME=WildRydes
-USER=
+USER=`aws sts get-caller-identity --query Arn --output text | cut -d '/' -f 2`
 
 # Uncomment if not using AWS Cloudshell
 #AWS_REGION=`aws ec2 describe-availability-zones --output text \
@@ -18,14 +19,14 @@ USER=
 ### IAM
 Create HTTPS Git credentials for AWS CodeCommit
 ```
-aws iam create-service-specific-credential --user-name Ken --service-name codecommit.amazonaws.com
+aws iam create-service-specific-credential --user-name $USER \
+    --service-name codecommit.amazonaws.com
+# Note retain the ServiceUserName and ServicePassword for later use with git commands
+aws iam list-service-specific-credentials --user-name $USER
 ```
-#### Note retain the ServiceUserName and ServicePassword for later use with git commands
-aws iam list-service-specific-credentials --user-name Ken
-DELETE
-```
-ID=`aws iam list-service-specific-credentials --user-name Ken --service-name codecommit.amazonaws.com --output text  --query "ServiceSpecificCredentials[].ServiceSpecificCredentialId" `
-aws iam delete-service-specific-credential --user-name Ken  --service-specific-credential-id $ID
+ID=`aws iam list-service-specific-credentials --user-name $USER \
+    --service-name codecommit.amazonaws.com --output text  \
+    --query "ServiceSpecificCredentials[].ServiceSpecificCredentialId" `
 ```
 
 ### CodeCommit
@@ -178,7 +179,8 @@ git push
 curl -v https://$APIID.execute-api.$REGION.amazonaws.com/prod/
 ```
 
-### Clean Up by removing all the resources created
+# Clean up
+By deleting all the resources created
 ```
 # Delete API Gateway
 APIID=`aws apigateway get-rest-apis --output text \
@@ -195,6 +197,11 @@ aws dynamodb delete-table --table-name 'WildRydes'
 aws iam delete-role-policy --role-name EenyMeenyMinyMoe \
     --policy-name EenyMeenyMinyMoe
 aws iam delete-role --role-name EenyMeenyMinyMoe 
+
+# Remove creds
+aws iam delete-service-specific-credential --user-name $USER \
+    --service-specific-credential-id $ID
+
 ```
 
 ### Extra credit
