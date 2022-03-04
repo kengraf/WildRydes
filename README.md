@@ -89,8 +89,7 @@ Validate Cognito is active, in browser click "Giddy up" registration button.
 ### DynamoDB
 ```
 # Create a new table
-aws dynamodb create-table \
-    --table-name Rides \
+aws dynamodb create-table --table-name Rides \
     --attribute-definitions AttributeName=RideId,AttributeType=S  \
     --key-schema AttributeName=RideId,KeyType=HASH  \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5  
@@ -106,7 +105,7 @@ aws iam create-role --role-name $APPNAME \
 aws iam put-role-policy --role-name $APPNAME --policy-name $APPNAME \
     --policy-document file://lambdapolicy.json
 ARN=`aws iam list-roles --output text \
-    --query "Roles[?RoleName==${APPNAME}].Arn" `
+    --query "Roles[?RoleName=='${APPNAME}'].Arn" `
 
 # Create Lambda
 zip function.zip -xi index.js
@@ -175,28 +174,27 @@ By deleting all the resources created
 aws codecommit delete-repository --repository-name $APPNAME
 
 # Delete Amplify
-ID=`aws amplify list-apps --output text --query "apps[?name==${APPNAME}].appId" `
-aws amplify delete-app --app-id $ID
+AMPID=`aws amplify list-apps --output text --query "apps[?name=='${APPNAME}'].appId" `
+aws amplify delete-app --app-id $AMPID > /dev/null
 
 # Delete Cognito User pool
 POOLID=`aws cognito-idp list-user-pools --max-results 10 \
-	--output text --query "UserPools[?Name==${APPNAME}].Id" `
+	--output text --query "UserPools[?Name=='${APPNAME}'].Id" `
 aws cognito-idp delete-user-pool --user-pool-id $POOLID
 
 # Delete API Gateway
 APIID=`aws apigateway get-rest-apis --output text \
-    --query "items[?name==${APPNAME}].id" `
+    --query "items[?name=='${APPNAME}'].id"`
 aws apigateway delete-rest-api --rest-api-id $APIID
 
 # Delete Lambda function
 aws lambda delete-function --function-name $APPNAME
 
 # Delete DynamoDB table
-aws dynamodb delete-table --table-name $APPNAME
+aws dynamodb delete-table --table-name 'Rides' > /dev/null
 
 # Delete Role and Policy
-aws iam delete-role-policy --role-name $APPNAME \
-    --policy-name $APPNAME
+aws iam delete-role-policy --role-name $APPNAME --policy-name $APPNAME
 aws iam delete-role --role-name $APPNAME
 
 # Remove creds
