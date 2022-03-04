@@ -1,6 +1,6 @@
 # WildRydes
-Command line instructions for AWS' WildRydes serverless demo
-![Original AWS site](https://aws.amazon.com/getting-started/hands-on/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/)
+Command line instructions for AWS' WildRydes serverless demo  
+[Original AWS site](https://aws.amazon.com/getting-started/hands-on/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/)  
 We are using this repo to learn about a basic Cloud serverless deployment.
 
 This deployment leverages a database tier (AWS DynamoDB), application (Lambda), Cognito(Identity), Amplify w/ CodeCommit (code management), and REST front end (API Gateway).
@@ -13,7 +13,7 @@ USER=`aws sts get-caller-identity --query Arn --output text | cut -d '/' -f 2`
 
 # Uncomment if not using AWS Cloudshell
 #AWS_REGION=`aws ec2 describe-availability-zones --output text \
-#    --query 'AvailabilityZones[0].[RegionName]'`
+#    --query 'AvailabilityZones[0].[RegionName]'`  
 ```
 
 ### IAM
