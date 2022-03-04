@@ -1,6 +1,5 @@
 # WildRydes
-Command line instructions for AWS' WildRydes serverless demo  
-[Original AWS site](https://aws.amazon.com/getting-started/hands-on/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/)  
+Command line instructions for AWS' WildRydes serverless demo: [Original AWS site](https://aws.amazon.com/getting-started/hands-on/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/)  
 We are using this repo to learn about a basic Cloud serverless deployment.
 
 This deployment leverages a database tier (AWS DynamoDB), application (Lambda), Cognito(Identity), Amplify w/ CodeCommit (code management), and REST front end (API Gateway).
@@ -14,6 +13,7 @@ USER=`aws sts get-caller-identity --query Arn --output text | cut -d '/' -f 2`
 # Uncomment if not using AWS Cloudshell
 #AWS_REGION=`aws ec2 describe-availability-zones --output text \
 #    --query 'AvailabilityZones[0].[RegionName]'`  
+
 ```
 
 ### IAM
@@ -22,11 +22,12 @@ Create HTTPS Git credentials for AWS CodeCommit
 aws iam create-service-specific-credential --user-name $USER \
     --service-name codecommit.amazonaws.com
 # Note retain the ServiceUserName and ServicePassword for later use with git commands
-aws iam list-service-specific-credentials --user-name $USER
-```
+aws iam list-service-specific-credentials --user-name $USER  
+
 ID=`aws iam list-service-specific-credentials --user-name $USER \
     --service-name codecommit.amazonaws.com --output text  \
-    --query "ServiceSpecificCredentials[].ServiceSpecificCredentialId" `
+    --query "ServiceSpecificCredentials[].ServiceSpecificCredentialId" `  
+    
 ```
 
 ### CodeCommit
@@ -47,7 +48,8 @@ unzip -j main.zip -d .
 rm main.zip
 git add .
 git commit -m 'initial create'
-git push
+git push  
+
 ```
 
 ### Amplify Console
@@ -77,7 +79,8 @@ sed -i "/userPoolClientId:/ s/'.*'/'$CLIENTID'/" js/config.js
 sed -i "/region:/ s/'.*'/'us-east-2'/" js/config.js
 git add .
 git commit -m 'user pool update'
-git push
+git push  
+
 ```
 
 Validate Cognito is active, in browser click "Giddy up" registration button.
@@ -90,7 +93,7 @@ aws dynamodb create-table \
     --table-name Rides \
     --attribute-definitions AttributeName=RideId,AttributeType=S  \
     --key-schema AttributeName=RideId,KeyType=HASH  \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5  
     
 ```
 
@@ -113,7 +116,8 @@ aws lambda create-function --function-name $APPNAME \
 # Give the API Gateway permission to invoke the Lambda
 aws lambda add-permission --function-name $APPNAME \
     --action lambda:InvokeFunction --statement-id AllowGateway \
-    --principal apigateway.amazonaws.com
+    --principal apigateway.amazonaws.com  
+    
 ```
 ### API Gateway
 ```
@@ -154,12 +158,14 @@ URL="https:\/\/${APIID}.execute-api.${REGION}.amazonaws.com\/prod"
 sed -i "/invokeUrl:/ s/'.*'/'$URL'/" js/config.js
 git add .
 git commit -m 'user pool update'
-git push
+git push  
+
 ```
 
 ### Run the game.  Each refresh will return a different name.
 ```
-curl -v https://$APIID.execute-api.$REGION.amazonaws.com/prod/
+curl -v https://$APIID.execute-api.$REGION.amazonaws.com/prod/  
+
 ```
 
 # Clean up
@@ -195,7 +201,7 @@ aws iam delete-role --role-name $APPNAME
 
 # Remove creds
 aws iam delete-service-specific-credential --user-name $USER \
-    --service-specific-credential-id $ID
+    --service-specific-credential-id $ID  
 
 ```
 
