@@ -68,7 +68,7 @@ Select your repo, Click next
 Check auto deploy, Click next  
 Click "Save and Deploy"  
 
-Validate Cognito is active, in browser click "Giddy up" registration button.
+Validate Cognito is active, in browser, complete the "Giddy up" registration process.
 
 
 ### DynamoDB
