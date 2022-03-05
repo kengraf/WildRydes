@@ -54,7 +54,7 @@ CLIENTID=`aws cognito-idp create-user-pool-client --user-pool-id $POOLID \
 	--output text --query "UserPoolClient.ClientId" `
 sed -i "/userPoolId:/ s/'.*'/'$POOLID'/" js/config.js
 sed -i "/userPoolClientId:/ s/'.*'/'$CLIENTID'/" js/config.js
-sed -i "/region:/ s/'.*'/'us-east-2'/" js/config.js
+sed -i "/region:/ s/'.*'/'$AWS_REGION'/" js/config.js
 git add .
 git commit -m 'user pool update'
 git push  
