@@ -52,6 +52,7 @@ POOLID=`aws cognito-idp create-user-pool --pool-name $APPNAME \
 CLIENTID=`aws cognito-idp create-user-pool-client --user-pool-id $POOLID \
 	--no-allowed-o-auth-flows-user-pool-client --client-name $APPNAME \
 	--output text --query "UserPoolClient.ClientId" `
+sed -i "s/\/\/.*//" js/config.js
 sed -i "/userPoolId:/ s/'.*'/'$POOLID'/" js/config.js
 sed -i "/userPoolClientId:/ s/'.*'/'$CLIENTID'/" js/config.js
 sed -i "/region:/ s/'.*'/'$AWS_REGION'/" js/config.js
