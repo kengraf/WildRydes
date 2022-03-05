@@ -194,8 +194,8 @@ aws iam delete-role-policy --role-name $APPNAME --policy-name $APPNAME
 aws iam delete-role --role-name $APPNAME
 
 # Remove creds
-aws iam delete-service-specific-credential --user-name $USER \
-    --service-specific-credential-id $ID  
+#aws iam delete-service-specific-credential --user-name $USER \
+#    --service-specific-credential-id $ID  
 
 ```
 
