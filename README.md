@@ -16,30 +16,23 @@ USER=`aws sts get-caller-identity --query Arn --output text | cut -d '/' -f 2`
 
 ```
 
-### IAM
-Create HTTPS Git credentials for AWS CodeCommit
-```
-aws iam create-service-specific-credential --user-name $USER \
-    --service-name codecommit.amazonaws.com
-# Note retain the ServiceUserName and ServicePassword for later use with git commands
-aws iam list-service-specific-credentials --user-name $USER  
-
-ID=`aws iam list-service-specific-credentials --user-name $USER \
-    --service-name codecommit.amazonaws.com --output text  \
-    --query "ServiceSpecificCredentials[].ServiceSpecificCredentialId" `  
-    
-```
+### IAM console
+For your user, create HTTPS Git credentials for AWS CodeCommit
+Download the CSV as username/password will be need next
 
 ### CodeCommit
 ```
 URL=`aws codecommit create-repository --repository-name $APPNAME \
-	--output text  --query "repositoryMetadata.cloneUrlHttp" `
-git clone $URL
-cd $APPNAME
+	--output text  --query "repositoryMetadata.cloneUrlHttp"`
 # Store Codecommit username/password to prevent future prompting
 git config --global credential.helper store
-git pull # Prompted for creds
-git pull # not
+# Next command will prompt for and store creds for future use in .git-credentials
+git clone $URL
+```
+
+### Populate local repo
+```
+cd $APPNAME
 # Load demo code from S3
 aws s3 cp s3://wildrydes-us-east-1/WebApplication/1_StaticWebHosting/website ./ --recursive
 # Load AWS code from kengraf/WildRydes
@@ -52,22 +45,7 @@ git push
 
 ```
 
-### Amplify Console
-```
-Get started with Web Hosting
-Enter name "WildRydes", Click next
-Select AWS CodeCommit, Click Next
-Select your repo, Click next
-Check auto deploy, Click next
-Click "Save and Deploy"
-
-Validate app deployed
-```
-
 ### Cognito
-Manage User Pool | Create User Pool
-Name pool ‘WildRydes’
-Review defaults and click Create
 ```
 POOLID=`aws cognito-idp create-user-pool --pool-name $APPNAME \
 	--auto-verified-attributes email --output text --query "UserPool.Id" `
@@ -82,6 +60,13 @@ git commit -m 'user pool update'
 git push  
 
 ```
+### Amplify Console
+Get started with Web Hosting
+Enter name "WildRydes", Click next
+Select AWS CodeCommit, Click Next
+Select your repo, Click next
+Check auto deploy, Click next
+Click "Save and Deploy"
 
 Validate Cognito is active, in browser click "Giddy up" registration button.
 
@@ -127,21 +112,23 @@ APIID=`aws apigateway create-rest-api --name $APPNAME \
 POOLARN=`aws cognito-idp describe-user-pool --user-pool-id $POOLID \
     --output text --query "UserPool.Arn"`
 aws apigateway create-authorizer --name $APPNAME --rest-api-id $APIID \
-	--type "COGNITO_USER_POOLS" \
-    --identity-source 'method.request.header.Authorization' \
-    --provider-arns $POOLARN
-# Create a GET method for a Lambda-proxy integration
-APIID=`aws apigateway get-rest-apis --output text \
-    --query "items[?name==${APPNAME}].id" `
+    --type "COGNITO_USER_POOLS" --provider-arns $POOLARN \
+    --identity-source 'method.request.header.Authorization'
+    
+# Create the 'ride' resource the sample code expects
 PARENTID=`aws apigateway get-resources --rest-api-id $APIID \
-	--query 'items[0].id' --output text`
+    --query 'items[0].id' --output text`
+aws apigateway create-resource --rest-api-id $APIID \
+    --parent-id $PARENTID --path-part 'ride'
+
+# Create a GET method for a Lambda-proxy integration
 aws apigateway put-method --rest-api-id $APIID --resource-id $PARENTID \
 	--http-method POST --authorization-type "NONE"
 
 # Create integration with Lambda
 ARN=`aws lambda get-function --function-name $APPNAME \
     --query Configuration.FunctionArn --output text`
-URI='arn:aws:apigateway:'$REGION':lambda:path/2015-03-31/functions/'$ARN'/invocations'
+URI='arn:aws:apigateway:'$AWS_REGION':lambda:path/2015-03-31/functions/'$ARN'/invocations'
 aws apigateway put-integration --rest-api-id $APIID \
    --resource-id $PARENTID --http-method POST --type AWS_PROXY \
    --integration-http-method POST --uri $URI
@@ -153,7 +140,7 @@ aws apigateway put-integration-response --rest-api-id $APIID \
 aws apigateway create-deployment --rest-api-id $APIID --stage-name prod
 
 # Update js/config.js with new endpoint
-URL="https:\/\/${APIID}.execute-api.${REGION}.amazonaws.com\/prod"
+URL="https:\/\/${APIID}.execute-api.${AWS_REGION}.amazonaws.com\/prod"
 sed -i "/invokeUrl:/ s/'.*'/'$URL'/" js/config.js
 git add .
 git commit -m 'user pool update'
@@ -168,7 +155,8 @@ curl -v https://$APIID.execute-api.$REGION.amazonaws.com/prod/
 ```
 
 # Clean up
-By deleting all the resources created
+By deleting all the resources created.
+Re-run the "General environment variables" code again if your Cloudshell has timed out.
 ```
 # Delete Codecommit repo
 aws codecommit delete-repository --repository-name $APPNAME
