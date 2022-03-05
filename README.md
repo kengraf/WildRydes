@@ -95,8 +95,7 @@ ARN=`aws iam list-roles --output text \
 # Create Lambda
 aws lambda create-function --function-name $APPNAME \
     --runtime nodejs14.x --role $ARN --zip-file fileb://function.zip \
-    --runtime nodejs14.x --handler index.handler
-LAMBDAARN=`aws lambda list-functions --query "Functions[?FunctionName=='${APPNAME}'].FunctionArn" --output text --region ${AWS_REGION}`
+    --handler index.handler
 ```
 ### API Gateway
 ```
