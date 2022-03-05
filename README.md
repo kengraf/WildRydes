@@ -61,12 +61,12 @@ git push
 
 ```
 ### Amplify Console
-Get started with Web Hosting
-Enter name "WildRydes", Click next
-Select AWS CodeCommit, Click Next
-Select your repo, Click next
-Check auto deploy, Click next
-Click "Save and Deploy"
+Get started with Web Hosting  
+Enter name "WildRydes", Click next  
+Select AWS CodeCommit, Click Next  
+Select your repo, Click next  
+Check auto deploy, Click next  
+Click "Save and Deploy"  
 
 Validate Cognito is active, in browser click "Giddy up" registration button.
 
