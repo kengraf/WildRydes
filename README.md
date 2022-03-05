@@ -93,15 +93,10 @@ ARN=`aws iam list-roles --output text \
     --query "Roles[?RoleName=='${APPNAME}'].Arn" `
 
 # Create Lambda
-zip function.zip -xi index.js
 aws lambda create-function --function-name $APPNAME \
     --runtime nodejs14.x --role $ARN --zip-file fileb://function.zip \
     --runtime nodejs14.x --handler index.handler
-# Give the API Gateway permission to invoke the Lambda
-aws lambda add-permission --function-name $APPNAME \
-    --action lambda:InvokeFunction --statement-id AllowGateway \
-    --principal apigateway.amazonaws.com  
-    
+LAMBDAARN=`aws lambda list-functions --query "Functions[?FunctionName=='${APPNAME}'].FunctionArn" --output text --region ${AWS_REGION}`
 ```
 ### API Gateway
 ```
@@ -111,23 +106,37 @@ APIID=`aws apigateway create-rest-api --name $APPNAME \
 # Create authorizer
 POOLARN=`aws cognito-idp describe-user-pool --user-pool-id $POOLID \
     --output text --query "UserPool.Arn"`
-aws apigateway create-authorizer --name $APPNAME --rest-api-id $APIID \
+AUTHID=`aws apigateway create-authorizer --name $APPNAME --rest-api-id $APIID \
     --type "COGNITO_USER_POOLS" --provider-arns $POOLARN \
-    --identity-source 'method.request.header.Authorization'
+    --identity-source 'method.request.header.Authorization' \
+    --output text --query "id"`
     
 # Create the 'ride' resource the sample code expects
 PARENTID=`aws apigateway get-resources --rest-api-id $APIID \
     --query 'items[0].id' --output text`
-aws apigateway create-resource --rest-api-id $APIID \
-    --parent-id $PARENTID --path-part 'ride'
+RESOURCEID=`aws apigateway create-resource --rest-api-id $APIID \
+    --parent-id $PARENTID --path-part 'ride' \
+    --output text --query "id"`
 
-# Create a GET method for a Lambda-proxy integration
-aws apigateway put-method --rest-api-id $APIID --resource-id $PARENTID \
-	--http-method POST --authorization-type "NONE"
-
+# Create a POST method for a Lambda-proxy integration
+METHODID=`aws apigateway put-method --rest-api-id $APIID --resource-id $RESOURCEID \
+    --http-method POST --authorization-type "COGNITO_USER_POOLS" \
+    --authorizer-id $AUTHID` 
+           
 # Create integration with Lambda
 ARN=`aws lambda get-function --function-name $APPNAME \
     --query Configuration.FunctionArn --output text`
+aws apigateway put-integration --rest-api-id ${APIID} --resource-id $RESOURCEID \
+    --http-method POST --type AWS_PROXY --integration-http-method POST \
+    --uri arn:aws:apigateway:$AWS_REGION:lambda:path/2015-03-31/functions/$ARN/invocations \
+    --request-templates '{"application/x-www-form-urlencoded":"{\"body\": $input.json(\"$\")}"}' \
+    --region $AWS_REGION
+APIARN=$(echo ${ARN} | sed -e 's/lambda/execute-api/' -e "s/function:${APPNAME}/${APIID}/")
+aws lambda add-permission --function-name $APPNAME --statement-id $APPNAME \
+    --action lambda:InvokeFunction --principal apigateway.amazonaws.com \
+    --source-arn "$APIARN/prod/POST/ride" --region $AWS_REGION
+----old---
+
 URI='arn:aws:apigateway:'$AWS_REGION':lambda:path/2015-03-31/functions/'$ARN'/invocations'
 aws apigateway put-integration --rest-api-id $APIID \
    --resource-id $PARENTID --http-method POST --type AWS_PROXY \
@@ -135,6 +144,11 @@ aws apigateway put-integration --rest-api-id $APIID \
 aws apigateway put-integration-response --rest-api-id $APIID \
     --resource-id $PARENTID --http-method POST \
     --status-code 200 --selection-pattern "" 
+
+# Give the API Gateway permission to invoke the Lambda
+aws lambda add-permission --function-name $APPNAME --statement-id AllowGateway \
+    --action lambda:InvokeFunction --source-arn $ARN/ride \
+    --principal apigateway.amazonaws.com  
 
 # Push out deployment
 aws apigateway create-deployment --rest-api-id $APIID --stage-name prod
@@ -145,12 +159,6 @@ sed -i "/invokeUrl:/ s/'.*'/'$URL'/" js/config.js
 git add .
 git commit -m 'user pool update'
 git push  
-
-```
-
-### Run the game.  Each refresh will return a different name.
-```
-curl -v https://$APIID.execute-api.$REGION.amazonaws.com/prod/  
 
 ```
 
