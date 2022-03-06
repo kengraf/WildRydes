@@ -62,7 +62,9 @@ git push
 
 ```
 ### Amplify Console
-Get started with Web Hosting  
+Comment: Know when to hold'm, know when to fold'm, know when to run.  When a vendor carves out a part of thier API into a new tool, maybe it time t o run.  Didn't want to learn a new tool "AWS Amplify CLI", the amplify aws command was a pile of work.  The console is easy to use, so the console it is.
+
+Click 'Get started with Web Hosting'  
 Enter name "WildRydes", Click next  
 Select AWS CodeCommit, Click Next  
 Select your repo, Click next  
