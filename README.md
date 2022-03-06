@@ -118,11 +118,25 @@ RESOURCEID=`aws apigateway create-resource --rest-api-id $APIID \
     --parent-id $PARENTID --path-part 'ride' \
     --output text --query "id"`
 
+# Create a OPTIONS method for a MOCK integration
+METHODID=`aws apigateway put-method --rest-api-id $APIID --resource-id $RESOURCEID \
+    --http-method OPTIONS  --authorization-type "NONE" `
+aws apigateway put-method-response --rest-api-id ${APIID} --resource-id $RESOURCEID \
+    --http-method OPTIONS --status-code 200 \
+    --response-models '{ "application/json":"Empty" }' \
+    --response-parameters "method.response.header.Access-Control-Allow-Headers"=false,"method.response.header.Access-Control-Allow-Methods"=false,"method.response.header.Access-Control-Allow-Origin"=false
+aws apigateway put-integration --rest-api-id ${APIID} --resource-id $RESOURCEID \
+    --http-method OPTIONS --type MOCK \
+    --request-templates '{ "application/json": "{\"statusCode\": 200}" }'
+aws apigateway put-integration-response --rest-api-id ${APIID} --resource-id $RESOURCEID \
+    --http-method OPTIONS --status-code 200 \
+    --response-templates '{ "application/json":"" }' \
+    --response-parameters '{"method.response.header.Access-Control-Allow-Headers":"'"'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"'","method.response.header.Access-Control-Allow-Methods":"'"'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"'","method.response.header.Access-Control-Allow-Origin":"'"'*'"'"}'
+
 # Create a POST method for a Lambda-proxy integration
 METHODID=`aws apigateway put-method --rest-api-id $APIID --resource-id $RESOURCEID \
-    --http-method POST --authorization-type "COGNITO_USER_POOLS" \
-    --authorizer-id $AUTHID` 
-           
+    --http-method POST --authorization-type "COGNITO_USER_POOLS" --authorizer-id $AUTHID`
+          
 # Create integration with Lambda
 ARN=`aws lambda get-function --function-name $APPNAME \
     --query Configuration.FunctionArn --output text`
@@ -131,19 +145,11 @@ aws apigateway put-integration --rest-api-id ${APIID} --resource-id $RESOURCEID 
     --uri arn:aws:apigateway:$AWS_REGION:lambda:path/2015-03-31/functions/$ARN/invocations \
     --request-templates '{"application/x-www-form-urlencoded":"{\"body\": $input.json(\"$\")}"}' \
     --region $AWS_REGION
+
 APIARN=$(echo ${ARN} | sed -e 's/lambda/execute-api/' -e "s/function:${APPNAME}/${APIID}/")
 aws lambda add-permission --function-name $APPNAME --statement-id $APPNAME \
     --action lambda:InvokeFunction --principal apigateway.amazonaws.com \
     --source-arn "$APIARN/prod/POST/ride" --region $AWS_REGION
-----old---
-
-URI='arn:aws:apigateway:'$AWS_REGION':lambda:path/2015-03-31/functions/'$ARN'/invocations'
-aws apigateway put-integration --rest-api-id $APIID \
-   --resource-id $PARENTID --http-method POST --type AWS_PROXY \
-   --integration-http-method POST --uri $URI
-aws apigateway put-integration-response --rest-api-id $APIID \
-    --resource-id $PARENTID --http-method POST \
-    --status-code 200 --selection-pattern "" 
 
 # Give the API Gateway permission to invoke the Lambda
 aws lambda add-permission --function-name $APPNAME --statement-id AllowGateway \
