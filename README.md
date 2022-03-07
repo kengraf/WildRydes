@@ -27,7 +27,8 @@ URL=`aws codecommit create-repository --repository-name $APPNAME \
 # Store Codecommit username/password to prevent future prompting
 git config --global credential.helper store
 # Next command will prompt for and store creds for future use in .git-credentials
-git clone $URL
+git clone $URL  
+
 ```
 
 ### Populate local repo
@@ -98,7 +99,8 @@ ARN=`aws iam list-roles --output text \
 # Create Lambda
 aws lambda create-function --function-name $APPNAME \
     --runtime nodejs14.x --role $ARN --zip-file fileb://function.zip \
-    --handler index.handler
+    --handler index.handler  
+    
 ```
 ### API Gateway
 ```
