@@ -74,18 +74,7 @@ Click "Save and Deploy"
 
 Validate Cognito is active, in browser, complete the "Giddy up" registration process.
 
-
-### DynamoDB
-```
-# Create a new table
-aws dynamodb create-table --table-name Rides \
-    --attribute-definitions AttributeName=RideId,AttributeType=S  \
-    --key-schema AttributeName=RideId,KeyType=HASH  \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5  
-    
-```
-
-### Lambda: used to select a ride
+### Roles needed for Lambda and DynamoDB
 ```
 # Create role for Lambda function
 aws iam create-role --role-name $APPNAME \
@@ -97,7 +86,17 @@ ARN=`aws iam list-roles --output text \
     --query "Roles[?RoleName=='${APPNAME}'].Arn" `
 ```
 
-# Create Lambda
+### DynamoDB
+```
+# Create a new table
+aws dynamodb create-table --table-name Rides \
+    --attribute-definitions AttributeName=RideId,AttributeType=S  \
+    --key-schema AttributeName=RideId,KeyType=HASH  \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5  
+    
+```
+
+### Create Lambda
 Note: A small delay from the role definition is needed
 ```
 aws lambda create-function --function-name $APPNAME \
