@@ -95,8 +95,11 @@ aws iam put-role-policy --role-name $APPNAME --policy-name $APPNAME \
     --policy-document file://lambdapolicy.json
 ARN=`aws iam list-roles --output text \
     --query "Roles[?RoleName=='${APPNAME}'].Arn" `
+```
 
 # Create Lambda
+Note: A small delay from the role definition is needed
+```
 aws lambda create-function --function-name $APPNAME \
     --runtime nodejs14.x --role $ARN --zip-file fileb://function.zip \
     --handler index.handler  
