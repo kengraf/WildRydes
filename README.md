@@ -46,6 +46,12 @@ git push
 
 ```
 
+### Fix ArcGIS update issue
+```
+sed -i "s/4.3/4.6/g" ride.html
+
+```
+
 ### Cognito
 ```
 POOLID=`aws cognito-idp create-user-pool --pool-name $APPNAME \
