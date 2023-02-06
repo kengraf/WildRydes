@@ -143,7 +143,7 @@ aws apigateway put-integration --rest-api-id ${APIID} --resource-id $RESOURCEID 
 aws apigateway put-integration-response --rest-api-id ${APIID} --resource-id $RESOURCEID \
     --http-method OPTIONS --status-code 200 \
     --response-templates '{ "application/json":"" }' \
-    --response-parameters '{"method.response.header.Access-Control-Allow-Headers":"'"'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"'","method.response.header.Access-Control-Allow-Methods":"'"'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"'","method.response.header.Access-Control-Allow-Origin":"'"'*'"'"}'
+    --response-parameters '{"method.response.header.Access-Control-Allow-Headers":"'"'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"'","method.response.header.Access-Control-Allow-Methods":"'"'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"'","method.response.header.Access-Control-Allow-Origin":"'"'*'"'"}'  --no-cli-pager
 
 # Create a POST method for a Lambda-proxy integration
 METHODID=`aws apigateway put-method --rest-api-id $APIID --resource-id $RESOURCEID \
